@@ -10,11 +10,29 @@ using System.Windows.Forms;
 
 namespace FileScript_Revamped
 {
-    public partial class Form1 : Form
+    public partial class MainForm : Form
     {
-        public Form1()
+        public MainForm()
         {
             InitializeComponent();
         }
+
+        public ToolFunctionCommand Command = ToolFunctionCommand.Nothing;
+
+
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            if (!string.IsNullOrEmpty(TargetFile))
+            {
+                Text = string.Format("Filescript Launcher: {0}", TargetFile);
+            }
+            else
+            {
+                Text = "Filescript Launcher: {Unspecified File System Target}";
+            }
+        }
+
+        public string TargetFile { get; set; } = string.Empty;
+
     }
 }

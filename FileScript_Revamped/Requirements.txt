@@ -1,0 +1,11 @@
+﻿#1 
+ This app must mainain Command line compatability with
+ the original filescript.exe I wrote years ago.  With the
+ exeception of Insuring  .NET is installed on a windows platorm,
+ it shouild be 'just drop in and play'
+
+ #2
+	We should expose more command line $() strings for various system
+	parts.
+
+#3  Be easy to drop exists 

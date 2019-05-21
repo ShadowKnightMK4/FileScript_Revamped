@@ -1,0 +1,39 @@
+﻿FileScript.exe "Target File System Object" /Arguments
+Arguments are not case sensistive.
+
+/? or /usage or /help
+	displays this message
+/install
+	Install Registry commands into the HKEY_CLASS_ROOT\* for this
+
+/uninstall
+	Remove avoe commmands
+
+/EXTRRAS
+	Display a list of all commands the program offers
+
+/CFILENAME
+	Place the target complete location on the clipboard
+
+/FILENAME
+	Place only the Targets filename without location on the clipboard
+
+/FILEPATH
+	Place the Target's location on the clipboard 
+
+/COMMAND.COM
+/CMD
+/PROMPT
+	Launch cmd.exe with directory set to taget's location if target is a file
+	and to the target itself if it is a folder
+/ADMINCMD
+/CMDADMIN
+	Launch cmd.exe with directory set to taget's location if target is a file
+	and to the target itself if it is a folder. Requests Elevated privileges
+
+
+/SHOWENV
+	Show all supported $(varname) and their expanded values
+
+
+In addition to the above flags which work with ether mode
