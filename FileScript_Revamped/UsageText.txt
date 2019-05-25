@@ -3,37 +3,56 @@ Arguments are not case sensistive.
 
 /? or /usage or /help
 	displays this message
+
+/showenv
+	displays a list of all supported $(value) macros and their values.
+
 /install
-	Install Registry commands into the HKEY_CLASS_ROOT\* for this
+	insert some context handlers into the All files menu
 
+/remove
 /uninstall
-	Remove avoe commmands
+	remove what was installed via /install
 
-/EXTRRAS
-	Display a list of all commands the program offers
+/extras
+	Display a GUI to execute said build in commands
 
-/CFILENAME
-	Place the target complete location on the clipboard
+/filename
+	place the Target's filename on the clipboard. This does not
+	include the path at  all.
 
-/FILENAME
-	Place only the Targets filename without location on the clipboard
+/filepath
+	place the folder's path to where the target is
+	on the clipboard. This does not include
+	the file name
 
-/FILEPATH
-	Place the Target's location on the clipboard 
+/cfilename
+	This places the target filename and location
+	on the clipboard. without quotes.
 
-/COMMAND.COM
-/CMD
-/PROMPT
-	Launch cmd.exe with directory set to taget's location if target is a file
-	and to the target itself if it is a folder
-/ADMINCMD
-/CMDADMIN
-	Launch cmd.exe with directory set to taget's location if target is a file
-	and to the target itself if it is a folder. Requests Elevated privileges
+/quotedfilename
+	This places the target filename +
+	location on the clipboard enclosed
+	in quotes.
 
+/codefriendlyfilename
+	This places the filename + location
+	on the clipboard encased in quotesw
+	and all '\' chars replaced with a 
+	'\\'
+/explore
+	This launches explorer to the target's folder
+	if it is a file and launchs it to the target
+	if it is a a folder
 
-/SHOWENV
-	Show all supported $(varname) and their expanded values
+/command.com
+/cmd
+/prompt
+	This launches the command prompt with the 
+	directory set o this file's location.
 
-
-In addition to the above flags which work with ether mode
+/admincmd
+/cmdadmin
+	This launches the command prompt with elevated 
+	credentials. UAC prompt should trigger
+	if Filescript is not already admin.

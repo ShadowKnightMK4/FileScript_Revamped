@@ -45,10 +45,10 @@ namespace FileScript_Revamped
 
     public static class ToolFunction
     {
-        readonly static string  ExploreCmd = "\"$(WINDOWS)\\explorer.exe\"";
+        readonly static string ExploreCmd = "\"$(WINDOWS)\\explorer.exe\"";
         readonly static string LaunchCmdPrompt = "\"$(system32)\\cmd.exe\"";
         readonly static string LaunchCmdPromptArgString = "/K cd {0}";
-        public static void LaunchExternCommand(string App, string Args, bool UseShell, string verb="")
+        public static void LaunchExternCommand(string App, string Args, bool UseShell, string verb="", string WorkingDir="")
         {
             using (Process Target = new Process())
             {
@@ -58,6 +58,14 @@ namespace FileScript_Revamped
                 Target.StartInfo.Arguments = Args;
 
                 Target.StartInfo.UseShellExecute = UseShell;
+                if (string.IsNullOrEmpty(WorkingDir) == false)
+                {
+                    Target.StartInfo.WorkingDirectory = WorkingDir;
+                }
+                else
+                {
+                    Target.StartInfo.WorkingDirectory = string.Empty;
+                }
                 if (UseShell)
                 {
                     Target.StartInfo.Verb = verb;
@@ -102,7 +110,7 @@ namespace FileScript_Revamped
                     NewTarget = string.Empty;
                 }
             }
-            if (NewTarget.Equals(string.Empty))
+            if (string.IsNullOrEmpty(NewTarget))
             {
                 MessageBox.Show(string.Format("{0} Does not appear to exist. . .", Target));
             }
@@ -113,7 +121,7 @@ namespace FileScript_Revamped
                 CmdArg = string.Format(LaunchCmdPromptArgString, Path.GetDirectoryName( ArgumentExpander.ExpandVars(Target)));
                 if (TryAdmin)
                 {
-                    LaunchExternCommand(cmd.ToString(), CmdArg, true, "runas");
+                    LaunchExternCommand(cmd.ToString(), CmdArg, true, "runas",  Target);
                 }
                 else
                 {
@@ -251,6 +259,8 @@ namespace FileScript_Revamped
             {
                 switch (cmd)
                 {
+                    case ToolFunctionCommand.Nothing:
+                        break;
                     case ToolFunctionCommand.LaunchCmdWithSetCurrentDirectory:
                         LaunchCmd(Target, false);
                         break;
@@ -284,8 +294,16 @@ namespace FileScript_Revamped
                         break;
                     case ToolFunctionCommand.Explore:
                         Explore(Target);
-                        break;
+                        break; 
                     case ToolFunctionCommand.ExtrasMenu:
+                        Application.EnableVisualStyles();
+                        Application.SetCompatibleTextRenderingDefault(false);
+                        using (MainForm Extras = new MainForm())
+                        {
+                            Extras.TargetFile = Target;
+                            Application.Run(Extras);
+                        }
+                        break;
                     case ToolFunctionCommand.FindMe:
                         Explore(Process.GetCurrentProcess().MainModule.FileName);
                         return;
@@ -300,4 +318,5 @@ namespace FileScript_Revamped
             }
         }
     }
+
 }

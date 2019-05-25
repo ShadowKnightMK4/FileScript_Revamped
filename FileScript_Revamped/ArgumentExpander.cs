@@ -249,7 +249,7 @@ namespace FileScript_Revamped
     /// </summary>
     public static class ArgumentExpander
     {
-        static Dictionary<string, ArgumentExpanderSupported> Env = new Dictionary<string, ArgumentExpanderSupported>();
+        readonly static Dictionary<string, ArgumentExpanderSupported> Env = new Dictionary<string, ArgumentExpanderSupported>();
 
         /// <summary>
         /// expand all vares to their value with query()
@@ -257,8 +257,9 @@ namespace FileScript_Revamped
         /// </summary>
         public static void ShowEnv()
         {
-            string[] keys = Env.Keys.ToArray();
-            for (int step = 0; step < keys.Length;step++)
+            List<string> keys = Env.Keys.ToList();
+            keys.Sort();
+            for (int step = 0; step < keys.Count;step++)
             {
                 Console.WriteLine(string.Format("${0} expands to {1}", keys[step], Query(Env[keys[step]])));
             }
@@ -311,6 +312,7 @@ namespace FileScript_Revamped
             Env.Add("(systemx86)", ArgumentExpanderSupported.SystemX86);
             Env.Add("(templates)", ArgumentExpanderSupported.Templates);
             Env.Add("(onedrive)", ArgumentExpanderSupported.OneDrive);
+            
         }
         public static string ExpandVars(string Input)
         {

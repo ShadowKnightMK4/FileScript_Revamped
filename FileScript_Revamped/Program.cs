@@ -40,16 +40,30 @@ namespace FileScript_Revamped
             ArgumentExpander.BuildEnv();
 
             TargetFileObject = string.Empty;
+
             for (int step= 0; step < args.Length;step++)
             {
-                if (step.Equals(0))
+                //if (step.Equals(0))
                 {
-                    TargetFileObject = args[step];
+                  //  TargetFileObject = ArgumentExpander.ExpandVars(args[step]);
                 }
-                else
+                //else
                 {
                     switch (args[step].ToLower().Replace('-','/'))
                     {
+                        case "/target":
+                        case "/t":
+                            if (step+1 >= args.Length)
+                            {
+                                Console.WriteLine("Error: Encounted end of argument list looking for /target [File System Item]");
+                                break;
+                            }
+                            else
+                            {
+                                step++;
+                                TargetFileObject = args[step];
+                            }
+                            break;
                         case "/usage":
                         case "/help":
                         case "/?":
@@ -64,38 +78,75 @@ namespace FileScript_Revamped
                             break;
                         case "/extras":
                             {
-                                Application.EnableVisualStyles();
-                                Application.SetCompatibleTextRenderingDefault(false);
-                                Application.Run(new MainForm());
+                                ToolFunction.Invoke(ToolFunctionCommand.ExtrasMenu, TargetFileObject);
                                 break;
                             }
                         case "/filename":
                             {
+                                if (string.IsNullOrEmpty(TargetFileObject))
+                                {
+                                    Console.WriteLine(string.Format("{0} needs a target file system item. Fizzles....", args[step]));
+                                    break;
+                                }
+
                                 ToolFunction.Invoke(ToolFunctionCommand.SetClipboardFileName, TargetFileObject);
                                 break;
                             }
                         case "/filepath":
                             {
+                                if (string.IsNullOrEmpty(TargetFileObject))
+                                {
+                                    Console.WriteLine(string.Format("{0} needs a target file system item. Fizzles....", args[step]));
+                                    break;
+                                }
+
                                 ToolFunction.Invoke(ToolFunctionCommand.SetClipboardFilePath, TargetFileObject);
                                 break;
                             }
                         case "/cfilename":
                             {
+                                if (string.IsNullOrEmpty(TargetFileObject))
+                                {
+                                    Console.WriteLine(string.Format("{0} needs a target file system item. Fizzles....", args[step]));
+                                    break;
+                                }
+
                                 ToolFunction.Invoke(ToolFunctionCommand.SetClipboardCompleteLocation, TargetFileObject);
                                 break;
                             }
                         case "/quotedfilename":
                             {
+                                if (string.IsNullOrEmpty(TargetFileObject))
+                                {
+                                    Console.WriteLine(string.Format("{0} needs a target file system item. Fizzles....", args[step]));
+                                    break;
+                                }
+
                                 ToolFunction.Invoke(ToolFunctionCommand.SetClipboardQuotedCodeCompletePath, TargetFileObject);
                                 break;
                             }
                         case "/codefriendlyfilename":
                             {
+                                if (string.IsNullOrEmpty(TargetFileObject))
+                                {
+                                    Console.WriteLine(string.Format("{0} needs a target file system item. Fizzles....", args[step]));
+                                    break;
+                                }
+
                                 ToolFunction.Invoke(ToolFunctionCommand.SetClipboardQuotedCodeCompletePath, TargetFileObject);
                                 break;
                             }
+                        case "/findme":
+                            ToolFunction.Invoke(ToolFunctionCommand.FindMe, TargetFileObject);
+                            break;
                         case "/explore":
                             {
+                                if (string.IsNullOrEmpty(TargetFileObject))
+                                {
+                                    Console.WriteLine(string.Format("{0} needs a target file system item. Fizzles....", args[step]));
+                                    break;
+                                }
+
                                 ToolFunction.Invoke(ToolFunctionCommand.Explore, TargetFileObject);
                                 break;
                             }
@@ -103,18 +154,31 @@ namespace FileScript_Revamped
                         case "/cmd":
                         case "/prompt":
                             {
+                                if (string.IsNullOrEmpty(TargetFileObject))
+                                {
+                                    Console.WriteLine(string.Format("{0} needs a target file system item. Fizzles....", args[step]));
+                                    break;
+                                }
+
                                 ToolFunction.Invoke(ToolFunctionCommand.LaunchCmdWithSetCurrentDirectory, TargetFileObject);
                                 break;
                             }
                         case "/admincmd":
                         case "/cmdadmin":
                             {
+                                if (string.IsNullOrEmpty(TargetFileObject))
+                                {
+                                    Console.WriteLine(string.Format("{0} needs a target file system item. Fizzles....", args[step]));
+                                    break;
+                                }
+
                                 ToolFunction.Invoke(ToolFunctionCommand.AdminLaunchCmdWithSetCurrentDirectory, TargetFileObject);
                                 break;
                             }
                           
                         default:
-                            MessageBox.Show(string.Format("Unknown Command {0}", args[step]));
+                            //MessageBox.Show(string.Format("Unknown Command {0}", args[step]));
+                            Console.WriteLine(string.Format("Unknown Command {0}", args[step]));
                             break;
                     }
 
