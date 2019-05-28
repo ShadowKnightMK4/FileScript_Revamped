@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-
-using System.IO;
-using System.Diagnostics;
 using System.Windows.Forms;
 namespace FileScript_Revamped
 {
@@ -28,27 +26,232 @@ namespace FileScript_Revamped
         /// </summary>
         SetClipboardFilePath = 3,
         /// <summary>
-        /// Set clipboard to "Notepad.exe" when passed "C:\\Windows\\notepad.exe"
+        /// Set clipboard to "Notepad.exe" when passed "C:\Windows\notepad.exe"
         /// </summary>
-        SetClipboardFileName  = 4,
+        SetClipboardFileName = 4,
+        /// <summary>
+        /// Set clipboard to "Notepad" from C:\Windows\notepad.exe"
+        /// </summary>
         SetClipboardFileNameNoExt = 5,
+        /// <summary>
+        /// Set clipboard to "C:\Windows\notepad.exe" from "C:\Windows\notepad.exe"
+        /// </summary>
         SetClipboardCompleteLocation = 6,
+        /// <summary>
+        /// encase C:\\Windows\\notepad.exe in \" \" and set clipboard to this
+        /// </summary>
         SetClipboardQuotedCompletePath = 7,
+        /// <summary>
+        /// set clipboard to C/c++/C# friendly filepath string
+        /// </summary>
         SetClipboardQuotedCodeCompletePath = 8,
-        FindMe= 9,
+        /// <summary>
+        /// Explore and set it to FileScript's location
+        /// </summary>
+        FindMe = 9,
+        /// <summary>
+        /// launch the extras GUI menu
+        /// </summary>
         ExtrasMenu = 10,
+        /// <summary>
+        /// Copy to local one drive in the logged on user's userprofile
+        /// this resolves to $(UserProfile)\Onedrive
+        /// </summary>
         CopyToLocalOneDrive = 11,
+
         CreateJunctionFromHere = 12,
         CreateHardLinkFromHere = 13,
-        Nothing = 14
+        // do nothing
+        Nothing = 14,
+        /// <summary>
+        /// if target is a file, zip it as file.zip
+        /// if target is a folder zip its contents recursively as folder.zip
+        /// </summary>
+        ZipContents = 15,
+        /// <summary>
+        /// extra the target zip with folder structure intact
+        /// </summary>
+        UnZipContents = 16
+
     }
 
     public static class ToolFunction
     {
-        readonly static string ExploreCmd = "\"$(WINDOWS)\\explorer.exe\"";
-        readonly static string LaunchCmdPrompt = "\"$(system32)\\cmd.exe\"";
-        readonly static string LaunchCmdPromptArgString = "/K cd {0}";
-        public static void LaunchExternCommand(string App, string Args, bool UseShell, string verb="", string WorkingDir="")
+        static readonly string ExploreCmd;
+        static readonly string LaunchCmdPrompt;
+        static readonly string LaunchCmdPromptArgString;
+
+    
+        static ToolFunction()
+        {
+            ExploreCmd = "\"$(WINDOWS)\\explorer.exe\"";
+            LaunchCmdPrompt = "\"$(system32)\\cmd.exe\"";
+            LaunchCmdPromptArgString = "/K cd {0}";
+        }
+
+        static void UnZipCommand(string Zip)
+        {
+            int EntryCount = 0;
+            bool OkToKeepGoing = false;
+            StringBuilder TargetTempFolder = new StringBuilder(GetTempFileLocation());
+            StringBuilder FinalFolder = new StringBuilder();
+
+            if (!Zip.Contains(Path.VolumeSeparatorChar))
+            {
+                FinalFolder.Append(Directory.GetCurrentDirectory());
+            }
+            else
+            {
+                FinalFolder.Append(Path.GetDirectoryName(Zip));
+            }
+
+            if (FinalFolder.Length != 0)
+            {
+                if (FinalFolder[FinalFolder.Length - 1] != Path.DirectorySeparatorChar)
+                {
+                    FinalFolder.Append(Path.DirectorySeparatorChar);
+
+                }
+            } 
+
+            if  (File.Exists(TargetTempFolder.ToString()))
+            {
+                File.Delete(TargetTempFolder.ToString());
+                if (TargetTempFolder[TargetTempFolder.Length - 1] != Path.DirectorySeparatorChar)
+                {
+                    TargetTempFolder.Append(Path.DirectorySeparatorChar);
+                }
+                TargetTempFolder.Append(Path.GetFileNameWithoutExtension(Zip));
+                Directory.CreateDirectory(TargetTempFolder.ToString());
+
+                try
+                {
+                    using (FileStream Input = File.OpenRead(Zip))
+                    {
+                        using (ZipArchive Arch = new ZipArchive(Input, ZipArchiveMode.Read))
+                        {
+                            Arch.ExtractToDirectory(TargetTempFolder.ToString());
+                            OkToKeepGoing = true;
+                            EntryCount = Arch.Entries.Count;
+                        }
+                    }
+                }
+                catch (UnauthorizedAccessException e)
+                {
+                    Console.WriteLine(e.Message);
+                }
+                catch (IOException e)
+                {
+                    Console.WriteLine(e.Message);
+                }
+                finally
+                {
+
+                    // if it's all good. Move the resulst to the target.
+                    if (OkToKeepGoing)
+                    {
+
+                        //try
+                        
+                            {
+                                if (EntryCount > 0)
+                                {
+                                    string[] Info = Directory.GetFiles(TargetTempFolder.ToString());
+                                    StringBuilder RootBased = new StringBuilder();
+                                    foreach (string SingleFile in Info)
+                                    {
+                                        RootBased.Clear();
+                                        RootBased.Append(FinalFolder.ToString());
+                                        if (RootBased[RootBased.Length-1] != Path.DirectorySeparatorChar)
+                                        {
+                                            RootBased.Append(Path.DirectorySeparatorChar);
+                                        }
+                                        if (Directory.Exists(RootBased.ToString()) == false)
+                                        {
+                                            try
+                                            {
+                                                Directory.CreateDirectory(RootBased.ToString());
+                                            }
+                                            catch (UnauthorizedAccessException)
+                                            {
+                                                Console.WriteLine("Could not completely extract zip file " + Zip);
+                                                Console.WriteLine("Access Denied at " + RootBased.ToString());
+                                                break;
+                                            }
+                                        }
+                                        RootBased.Append(SingleFile.Substring(TargetTempFolder.Length));
+                                        try
+                                        {
+                                            if ((SafeMode == true) && (File.Exists(RootBased.ToString())))
+                                            {
+                                                Console.WriteLine(string.Format("Error: Unable to extra {0} to {1}. Reason is target already exists and SafeMode is on", SingleFile, RootBased.ToString()));
+                                            }
+                                            else
+                                            {
+                                            bool OkMove = false;
+                                                if (File.Exists(RootBased.ToString()))
+                                                {
+                                                    try
+                                                    {
+                                                        File.Delete(RootBased.ToString());
+                                                        OkMove = true;
+                                                    }
+                                                    catch (IOException)
+                                                    {
+                                                        // can't delete. 
+                                                        OkMove = false;
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    OkMove = true;
+                                                }
+                                                if (OkMove == true)
+                                                {
+                                                    File.Move(SingleFile, RootBased.ToString());
+                                                    Console.WriteLine("Extracted to " + RootBased.ToString());
+                                                }
+                                                else
+                                                {
+                                                    Console.WriteLine("Unable to move " + SingleFile + " to final location of " + RootBased.ToString());
+                                                }
+                                            }
+                                        }
+                                        catch (UnauthorizedAccessException)
+                                        {
+                                            Console.WriteLine("Access Denied when moving to " + RootBased.ToString());
+                                            continue;
+                                        }
+                                        catch (IOException e)
+                                        {
+                                            Console.WriteLine(e.Message);
+                                        }
+                                        
+                                    }
+
+                                    if (Directory.Exists(FinalFolder.ToString()))
+                                    {
+                                     if (ShowResults)
+                                        Explore(FinalFolder.ToString());
+                                    }
+                                }
+                            }
+                        
+                        
+                    }
+
+                    // now clean up temp folder
+                    Directory.Delete(TargetTempFolder.ToString(),true);
+                }
+
+
+            }
+            else
+            {
+                Console.WriteLine("Error: Could not extract zip. Reason being failed to setup tempoary storage");
+            }
+        }
+        public static void LaunchExternCommand(string App, string Args, bool UseShell, string verb = "", string WorkingDir = "")
         {
             using (Process Target = new Process())
             {
@@ -90,7 +293,7 @@ namespace FileScript_Revamped
             StringBuilder cmd;
             string CmdArg;
             string NewTarget;
-                
+
             if (string.IsNullOrEmpty(Target))
             {
                 return;
@@ -118,10 +321,10 @@ namespace FileScript_Revamped
             {
                 cmd = new StringBuilder();
                 cmd.AppendFormat(ArgumentExpander.ExpandVars(LaunchCmdPrompt), NewTarget, string.Empty);
-                CmdArg = string.Format(LaunchCmdPromptArgString, Path.GetDirectoryName( ArgumentExpander.ExpandVars(Target)));
+                CmdArg = string.Format(LaunchCmdPromptArgString, Path.GetDirectoryName(ArgumentExpander.ExpandVars(Target)));
                 if (TryAdmin)
                 {
-                    LaunchExternCommand(cmd.ToString(), CmdArg, true, "runas",  Target);
+                    LaunchExternCommand(cmd.ToString(), CmdArg, true, "runas", Target);
                 }
                 else
                 {
@@ -140,7 +343,7 @@ namespace FileScript_Revamped
             {
                 MessageBox.Show(string.Format("There was an error copying {0} to target {1}. Error Message {2}", source, target, e.Message));
             }
-            
+
         }
 
         static void CopyToOneDrive(string source)
@@ -157,7 +360,7 @@ namespace FileScript_Revamped
                 CopyFile(Target.ToString(), source);
             }
 
-            
+
         }
         enum SetClipBoardMode
         {
@@ -243,23 +446,220 @@ namespace FileScript_Revamped
                 FileMode = true;
             }
 
-            if (FileMode )
+            if (FileMode)
             {
                 NewTarget.Append(Path.GetDirectoryName(Target));
             }
             else
             {
-                NewTarget.Append(NewTarget);
+                NewTarget.Append(Target);
             }
             LaunchExternCommand(ShellCmd, NewTarget.ToString(), false);
         }
+
+        static string GetTempFileLocation()
+        {
+            StringBuilder ret = new StringBuilder();
+
+            ret.Append(Path.GetTempFileName());
+
+            return ret.ToString();
+        }
+
+
+        static void ZipCmd(string Target)
+        {
+
+            StringBuilder TargetName = new StringBuilder();
+            bool isFolder = false;
+            if (File.Exists(Target))
+            {
+               // isFolder = false;
+            }
+            else
+            {
+                if (Directory.Exists(Target))
+                {
+                 //   isFolder = true;
+                }
+                else
+                {
+                    Console.WriteLine(string.Format("Warning: Can't detected if {0} exists. You possible do not have required access to this file", Target));
+                    return;
+                }
+            }
+
+            TargetName.Append(Path.GetDirectoryName(Target));
+            if (TargetName.Length > 0)
+            {
+                if (TargetName[TargetName.Length - 1] != '\\')
+                {
+                    TargetName.Append('\\');
+                }
+            }
+            else
+            {
+
+            }
+
+            if (Target.Contains(Path.VolumeSeparatorChar) == false)
+            {
+                TargetName.Append(Directory.GetCurrentDirectory());
+                if (TargetName.Length > 0)
+                {
+                    if (TargetName[TargetName.Length - 1] != Path.DirectorySeparatorChar)
+                    {
+                        TargetName.Append(Path.DirectorySeparatorChar);
+                    }
+                }
+            }
+
+            {
+                TargetName.Append(Path.GetFileNameWithoutExtension(Target));
+            }
+
+            if (TargetName[TargetName.Length - 1] != '.')
+            {
+                TargetName.Append('.');
+            }
+            TargetName.Append("zip");
+
+            if (isFolder == false)
+            {
+              
+                string tempTarget = GetTempFileLocation();
+                var stream = File.Open(tempTarget, FileMode.OpenOrCreate);
+                try
+                {
+                    if (stream != null)
+                    {
+                        using (ZipArchive TargetZip = new ZipArchive(stream, ZipArchiveMode.Create))
+                        {
+                            try
+                            {
+                                ZipArchiveEntry Entry = TargetZip.CreateEntryFromFile(Target, Path.GetFileName(Target));
+                            }
+                            catch (IOException e)
+                            {
+                                Console.WriteLine("Error creating zip." + e.Message);
+                            }
+
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Error creating archive at " + TargetName.ToString());
+                    }
+                }
+                catch (IOException e)
+                {
+                    Console.WriteLine("Error creating archive at " + TargetName.ToString());
+                    Console.WriteLine("Reason is " + e.Message);
+                }
+
+                try
+                {
+
+                    File.Move(tempTarget, TargetName.ToString());
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    Console.WriteLine("Access denied at " + TargetName.ToString());
+                    Console.WriteLine("Contents will be abvalable at " + tempTarget);
+                }
+                catch (IOException e)
+                {
+                    Console.WriteLine("Error finalizing zip. Reason " + e.Message);
+                    Console.WriteLine("Contents will be abvalable at " + tempTarget);
+                }
+
+
+
+            }
+            if (isFolder == true)
+            {
+                bool OK = false;
+                string tempTarget = GetTempFileLocation();
+                try
+                {
+                    if (File.Exists(tempTarget))
+                    {
+                        File.Delete(tempTarget);
+                    }
+                    ZipFile.CreateFromDirectory(Target, tempTarget);
+                    OK = true;
+                }
+                catch (UnauthorizedAccessException e)
+                {
+                    Console.WriteLine("Could create zip file. Reason " + e.Message);
+                }
+                catch (IOException e)
+                {
+                    Console.WriteLine("Could create zip file. Reason " + e.Message);
+                }
+                finally
+                {
+                    if (OK == true)
+                    {
+                        bool MoveOk = false;
+                        try
+                        {
+                            File.Move(tempTarget, TargetName.ToString());
+                            MoveOk = true;
+                        }
+                        catch (UnauthorizedAccessException)
+                        {
+                            Console.WriteLine("Access Denied. Can't move " + tempTarget + " to " + TargetName.ToString());
+                        }
+                        catch (IOException e)
+                        {
+                            Console.WriteLine("There was an error finializing zip. Error message is " + e.Message);
+                        }
+                        finally
+                        {
+                            if (MoveOk == false)
+                            {
+                                Console.WriteLine("There was an error creating file at " + TargetName.ToString());
+                                Console.WriteLine("The that file's contents is stored at " + tempTarget);
+                            }
+                            else
+                            {
+                                if (ShowResults)
+                                {
+                                    Explore(TargetName.ToString());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+
+            
+        }
+
+
         public static void Invoke(ToolFunctionCommand cmd, string Target)
         {
+            if (SafeMode == true)
+            {
+                Console.WriteLine("Safemode is on. No files you specify will be forcibly overwritten");
+            }
+            if (SafeMode == false)
+            {
+                Console.WriteLine("Safemode is off. If you specify a file that already exists to be written to, it will be overwritten");
+            }
             try
             {
                 switch (cmd)
                 {
                     case ToolFunctionCommand.Nothing:
+                        break;
+                    case ToolFunctionCommand.ZipContents:
+                        ZipCmd(Target);
+                        break;
+                    case ToolFunctionCommand.UnZipContents:
+                        UnZipCommand(Target);
                         break;
                     case ToolFunctionCommand.LaunchCmdWithSetCurrentDirectory:
                         LaunchCmd(Target, false);
@@ -294,7 +694,7 @@ namespace FileScript_Revamped
                         break;
                     case ToolFunctionCommand.Explore:
                         Explore(Target);
-                        break; 
+                        break;
                     case ToolFunctionCommand.ExtrasMenu:
                         Application.EnableVisualStyles();
                         Application.SetCompatibleTextRenderingDefault(false);
@@ -317,6 +717,22 @@ namespace FileScript_Revamped
                 MessageBox.Show(string.Format("Error: cmd {0} is not immplemented", cmd.ToString()));
             }
         }
+
+
+        /*
+         * If true then Files you specific won't be overwritten 
+         * If false then yes they will.
+         * 
+         * Does not apply to tempory items that the software creates.
+         */
+        public static bool SafeMode = true;
+
+        /// <summary>
+        /// should an active have a result in adjusting afile (move, create, ect..)
+        /// and results in a new file, Explore the new file's location
+        /// </summary>
+        public static bool ShowResults = false;
+
     }
 
 }

@@ -56,3 +56,20 @@ Arguments are not case sensistive.
 	This launches the command prompt with elevated 
 	credentials. UAC prompt should trigger
 	if Filescript is not already admin.
+
+
+/zip
+/compress
+	If the target is a folder, compress it and its subfolders
+	  to the folder target is located it.
+	  Example:  C:\TargetData\CompressMe  would create a zip
+	  at C:\TargetData\CompressMe.zip
+
+    If the target is a file compress it to the same folder
+	as the Target's location.
+	Example:  C:\TargetData\LargeData.dat would create a zip
+	at C:\TargetDta\LargeData.zip
+
+/expand
+	Assumes Target is a zip file. Extracts it to the current directory
+	with folders indact

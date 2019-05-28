@@ -33,7 +33,7 @@ namespace FileScript_Revamped
         /// </summary>
         [STAThread]
         static void Main(string[] args)
-        {
+       {
             // the first non self non '/' command 
             // beocmes this.
             string TargetFileObject;
@@ -43,14 +43,26 @@ namespace FileScript_Revamped
 
             for (int step= 0; step < args.Length;step++)
             {
-                //if (step.Equals(0))
                 {
-                  //  TargetFileObject = ArgumentExpander.ExpandVars(args[step]);
-                }
-                //else
-                {
-                    switch (args[step].ToLower().Replace('-','/'))
+                    switch (args[step].ToLower().Replace('-', '/'))
                     {
+                        case "/safemode":
+                        case "/safe":
+                        case "/readonly":
+                        case "/s":
+                            ToolFunction.SafeMode = true;
+                            break;
+                        case "/ovewrite":
+                        case "/o":
+                        case "/write":
+                        case "/allowwrite":
+                            ToolFunction.SafeMode = false;
+                            break;
+                        case "/exploreresults":
+                        case "/showresults":
+                        case "/results":
+                            ToolFunction.ShowResults = true;
+                            break;
                         case "/target":
                         case "/t":
                             if (step+1 >= args.Length)
@@ -75,6 +87,24 @@ namespace FileScript_Revamped
                         case "/install":
                             break;
                         case "/uninstall":
+                            break;
+                        case "/extract":
+                        case "/expand":
+                            if (string.IsNullOrEmpty(TargetFileObject))
+                            {
+                                Console.WriteLine(string.Format("{0} needs a target file system item. Fizzles....", args[step]));
+                                break;
+                            }
+                            ToolFunction.Invoke(ToolFunctionCommand.UnZipContents, TargetFileObject);
+                            break;
+                        case "/zip":
+                        case "/compress":
+                            if (string.IsNullOrEmpty(TargetFileObject))
+                            {
+                                Console.WriteLine(string.Format("{0} needs a target file system item. Fizzles....", args[step]));
+                                break;
+                            }
+                            ToolFunction.Invoke(ToolFunctionCommand.ZipContents,TargetFileObject);
                             break;
                         case "/extras":
                             {
@@ -188,7 +218,7 @@ namespace FileScript_Revamped
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new Form1());*/
-            return;
+            Console.ReadKey();
         }
     }
 }

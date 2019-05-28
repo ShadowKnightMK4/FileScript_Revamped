@@ -1,5 +1,6 @@
 ﻿using System;                                                                                                                                                                                                                                                                  
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -264,7 +265,10 @@ namespace FileScript_Revamped
                 Console.WriteLine(string.Format("${0} expands to {1}", keys[step], Query(Env[keys[step]])));
             }
             return;
+
         }
+
+        [DebuggerStepThrough]
         public static void BuildEnv()
         {
             Env.Add("(windows)", ArgumentExpanderSupported.Windows);
